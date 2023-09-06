@@ -63,16 +63,17 @@ if __name__ == '__main__':
 
     if args.algorithm == 'random':
         randomsearch = RANDOMSEARCH(config)
-        randomsearch.search(50000)
+        randomsearch.search(1)
 
         optimal = randomsearch.optimal
         randomsearch.init(optimal)
         PVs, PFs, TIs, POs, result = randomsearch.test()
-    
 
     pd.DataFrame(PVs).to_csv(f'result/PV_{args.algorithm}.csv')
     pd.DataFrame(PFs).to_csv(f'result/PF_{args.algorithm}.csv')
     pd.DataFrame(TIs).to_csv(f'result/TI_{args.algorithm}.csv')
     pd.DataFrame(POs).to_csv(f'result/PO_{args.algorithm}.csv')
+    pd.DataFrame.from_dict(result, orient='index')\
+        .to_csv(f'result/Me_{args.algorithm}.csv')
 
     
