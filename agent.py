@@ -61,7 +61,7 @@ class RLSEARCH(BackTester):
         self.opt_r.step()
 
         # Policy update
-        reg = self.mnet.regularizer(w)
+        reg = self.mnet.cost(w)
         w_loss = -(self.rnet(w) - 0.01*reg).mean()
 
         self.opt_a.zero_grad()

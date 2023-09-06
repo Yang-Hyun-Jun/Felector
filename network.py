@@ -45,7 +45,7 @@ class Mask(nn.Module):
     def hard(self, m):
         return self.hard(m).float()
 
-    def regularizer(self, x):
+    def cost(self, x):
         return 0.5 * (1 + torch.erf(x / math.sqrt(2))) 
 
 
