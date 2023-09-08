@@ -40,7 +40,7 @@ class RLSEARCH(BackTester):
         """
         결과 메트릭으로부터 reward 계산
         """
-        reward = result['rankic']
+        reward = result['sharpe']
         reward = torch.tensor([reward])
         return reward
         
@@ -61,7 +61,7 @@ class RLSEARCH(BackTester):
 
         # Policy update
         reg = self.mnet.cost(w)
-        w_loss = -(self.rnet(w) - 0.005*reg).mean()
+        w_loss = -(self.rnet(w) - 0.001*reg).mean()
 
         self.opt_a.zero_grad()
         w_loss.backward(retain_graph=True)
