@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     if args.algorithm == 'random':
         randomsearch = RANDOMSEARCH(config)
-        randomsearch.search(10000, '2008', '2015')
+        randomsearch.search(10000, '2010', '2015')
 
         optimal = randomsearch.optimal
         randomsearch.init(optimal)
