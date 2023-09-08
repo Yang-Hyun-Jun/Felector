@@ -14,9 +14,9 @@ class FactorManager:
     Kratio
     """
 
-    path1 = 'data3/factors_kr.csv'
-    path2 = 'data3/price_kr.csv'
-    path3 = 'data3/kospi.csv'
+    path1 = 'data5/factors_kr.csv'
+    path2 = 'data5/price_kr.csv'
+    path3 = 'data5/kospi.csv'
 
     def __init__(self, config):    
         """
