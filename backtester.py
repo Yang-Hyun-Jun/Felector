@@ -11,12 +11,12 @@ st = datetime.strptime
 
 class BackTester(Metrics, FactorManager):
     def __init__(self, config):
-        FactorManager.__init__(self)
+        FactorManager.__init__(self, config)
         
         self.config = config
-        self.init()
+        self.set_w()
 
-    def init(self, FactorWeight:np.array=None):
+    def init(self, w:np.array=None):
         """
         백테스트에 필요한 랭킹 테이블 로드
         FactorWeight: 각 팩터 스코어의 가중치
@@ -24,11 +24,11 @@ class BackTester(Metrics, FactorManager):
         [Ex: FactorWeight]
         FactorWeight = [0.12, 0.23, ..., 0.05]
         """
-        self.set_w(FactorWeight)
-        self.rank_all = self.\
-            get_RankALL(self.config['Factors'])
+        self.set_w(w)
+        self.rank_all = self.get_RankALL()
+        self.universe = self.price
         
-    def act(self, index:int, n:int, q='top', w='eql') -> np.array:
+    def act(self, index:int, n:int, q=int) -> np.array:
         """
         특정 타임스텝에서 팩터 랭킹에 따른, 티커 리스트와 가중 벡터 리턴
 
@@ -38,29 +38,16 @@ class BackTester(Metrics, FactorManager):
         w: 포트폴리오 가중방식
         """
 
-        sort = {'top':1, 'btm':-1}
-        universe = self.price
-        rank_all = self.rank_all
-        capital = self.capit
+        tickers_all = self.universe.columns.to_numpy()        
+        ticker = tickers_all[(self.rank_all.iloc[index].to_numpy() <= n * q) &
+                             (self.rank_all.iloc[index].to_numpy() > n * (q-1))]
 
-        tickers_all = universe.columns.to_numpy()        
-        tickers = tickers_all[np.argsort(rank_all.iloc[index].to_numpy())[::sort[q]][:n]]
-
-        capits = capital.iloc[index][tickers].values
-        # market cap weighted
-        weight_cap = capits / np.sum(capits)
         # equal weighted 
-        weight_eql = np.ones(n) / n 
-        # market cap weight / equal weight
-        if w=='cap':
-            weight = weight_cap
-        if w=='eql':
-            weight = weight_eql
-
-        return tickers, weight 
+        weight = np.ones(n) / n 
+        return ticker, weight 
 
 
-    def test(self):
+    def test(self, start='1990', end='2024'):
         """ 
         [Return list]
         1. PVs: 타임스텝별 포트폴리오 벨류
@@ -74,11 +61,14 @@ class BackTester(Metrics, FactorManager):
         POs = []
         TIs = []
 
-        universe = self.price
+        self.universe = self.universe[start:end]
+        self.rank_all = self.rank_all[start:end]
+
+        universe = self.universe
         rank_all = self.rank_all
         act = self.act
 
-        profitloss = 0
+        cum_profit = 0
         balance = 0
 
         # 초기 평가 금액
@@ -89,25 +79,23 @@ class BackTester(Metrics, FactorManager):
             self.config['Balance']
         # 포트폴리오 퀀타일
         q = self.config['Quantile']
-        # 포트폴리오 가중 방식
-        w = self.config['Weight'] 
         # 포트폴리오 투자 자산수
         n = self.config['Number'] 
         # 포트폴리오 리밸런싱 주기
         Q = self.config['Quarter'] 
 
-        freq = {'1Q': [3, 6, 9, 12], '2Q': [3, 9], '4Q': [12]}
+        freq = {'1Q': range(1,13), '2Q': [6, 12], '4Q': [12]}
 
         for i in range(0, len(universe)):
 
-            ticker_old, weight_old = act(i, n, q, w)
+            ticker_old, weight_old = act(i, n, q)
             p_old = Portfolio(ticker_old, weight_old) if i == 0 else p_old
             price_old = universe.iloc[i][p_old.ticker].values if i == 0 else price_old
 
             POs.append(p_old.weight)
             TIs.append(p_old.ticker)
             PVs.append(portfolio_value)
-            PFs.append(profitloss)
+            PFs.append(cum_profit)
             
             # 여기는 get_price 함수로 (인자는 ticker 받도록)
             price_old = universe.iloc[i-1][p_old.ticker].values
@@ -116,18 +104,19 @@ class BackTester(Metrics, FactorManager):
             # 다음 타임 스텝에서 가격 변동으로 인한 포트폴리오 변화
             ratio = (price_now - price_old) / price_old
             ratio = np.where(np.isnan(ratio), np.float64(-0.99), ratio)
+
+            profitloss = np.dot(ratio, p_old.weight)
+            portfolio_value *= (1 + profitloss)
+            cum_profit = ((portfolio_value / init_balance -1) * 100)
+
             weight_now = p_old.weight * (1+ratio) 
             weight_now = weight_now / np.sum(weight_now)
 
             p_old.update_weight(weight_now)
             
-            # 다음 타입 스텝에서 가격 변동으로 인한 포트폴리오 평가금액, 수익률 계산
-            portfolio_value = np.dot(portfolio_value * p_old.weight, 1+ratio)
-            profitloss = ((portfolio_value / init_balance) -1) * 100
-
             # Desired Portfolio
             check = st(rank_all.index[i], '%Y-%m-%d').month in freq[Q]
-            ticker, weight = act(i, n, q, w) if check else (p_old.ticker, p_old.weight)
+            ticker, weight = act(i, n, q) if check else (p_old.ticker, p_old.weight)
             p_new = Portfolio(ticker, weight)
 
             """
@@ -209,26 +198,11 @@ class BackTester(Metrics, FactorManager):
 
             p_old = Portfolio(order.ticker[weight>0], weight[weight>0])
         
-        PV = round(portfolio_value, 2)
-        FP = round(profitloss, 2)
-        AL = round(self.get_alpha(PVs), 4)
         SR = round(self.get_sr(PVs), 4)
         IC = round(self.get_rankIC(q), 4)
         MDD = round(self.get_mdd(PVs), 4)
 
-        # print('=====================')
-        # print(f'[BackTesting Done]')
-        # print(f'(n:{n}, q:{q}, w:{w}, Q:{Q})')
-        # print(f'Portfolio Value: {PV}')
-        # print(f'Final Profitloss: {FP} %')
-        # print(f'Alpha: {AL}')
-        # print(f'MDD: {MDD}')
-        # print(f'SR: {SR}')
-        # print(f'IC: {IC}')
-        # print('=====================')
-
-        Result = {'alpha': AL, 'sharpe': SR,
-                  'rankic': IC, 'mdd': MDD}
+        Result = {'sharpe': SR, 'rankic': IC, 'mdd': MDD}
         
         return PVs, PFs, TIs, POs, Result    
         

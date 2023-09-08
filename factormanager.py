@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from numpy.random import random
 
 class FactorManager:
 
@@ -7,22 +8,17 @@ class FactorManager:
     투자 유니버스가 되는 종목들의 
     Quality + Value Factor 데이터를 관리한다.
 
-    [Quality (Profitability)]
-    GPOA, CFOA, GMAR, ROE, ROA
-
-    [Value]
-    PER, PBR, PSR, PCR, EPS
-
-    [Mid Momentum]
-    3M, 6M, 9M, 12M
+    [Momentum Factors]
+    1M, 3M, 6M, 9M, 12M
+    M12_1, M12_3, M12_6, M12_9
+    Kratio
     """
 
     path1 = 'data/factors_kr.csv'
     path2 = 'data/price_kr.csv'
     path3 = 'data/kospi.csv'
-    path4 = 'data/cap_kr.csv'
 
-    def __init__(self):    
+    def __init__(self, config):    
         """
         all: 전 종목의 모든 팩터의 값을 담고 있는 데이터프레임
         price: 전 종목의 종가 값을 담고 있는 데이터프레임
@@ -30,15 +26,16 @@ class FactorManager:
         
         [Ex: all]
         종목코드  기준일       팩터   값
-        000990  2016-03-31  CFOA  0.047071
-        000990  2016-03-31  EPS   613.9786
+        000990  2016-03-31  1M  0.04707
+        000990  2016-03-31  3M   0.0786
         ...     ...         ...     ...
-        035000  2023-06-31  ROA   0.008364
+        035000  2023-06-31  6M   0.008364
         """    
         self.all = pd.read_csv(self.path1, index_col=0, dtype={'종목코드':str})
         self.price = pd.read_csv(self.path2, index_col=0)
         self.kospi = pd.read_csv(self.path3, index_col=0)
-        self.capit = pd.read_csv(self.path4, index_col=0)
+        self.factors = config['Factors']
+        self.scores_by_date = []
     
     def get_FactorData(self, name:str) -> pd.DataFrame:
         """
@@ -50,14 +47,14 @@ class FactorManager:
         종목코드      000990  001040  001230   001250  ... 
         기준일
         
-        2016-03-31  29.3984 7.6998  17.3678  95.3482 ...   
-        2016-06-30  41.3820 5.9536  32.9001  75.9153 ...
+        2016-03-31  0.03984 0.06998  0.03678  0.03482 ...   
+        2016-06-30  0.03820 0.09536  0.09001  0.09153 ...
         ...
         2022-06-30 
         """
 
-        factor_data = self.all[self.all['팩터'] == name][['종목코드', '기준일', '값']]
-        factor_data = factor_data.pivot(index='기준일', columns='종목코드', values='값')
+        factor_data = self.all[self.all['팩터'] == name][['종목코드', '날짜', '값']]
+        factor_data = factor_data.pivot(index='날짜', columns='종목코드', values='값')
         return factor_data
     
     def get_ScoreEACH(self, date:str) -> pd.DataFrame:
@@ -66,37 +63,23 @@ class FactorManager:
 
         
         [Ex: self.get_ScoreEACH('2022-12-31')]
-        팩터       CFOA   EPS   GMAR   ...   ROE
+        팩터       1M   3M   6M   ...   Kratio
         종목코드
         000990    1.0    9.0   41.0   ...   45.0
         001040    13.0   5.0   13.0   ...   1.0 
         ...
         001520    8.0    16.0  20.0   ...   13.0
         """
-
-        values = self.all[self.all['기준일'] == date][['종목코드', '팩터', '값']]
+        values = self.all[self.all['날짜'] == date][['종목코드', '팩터', '값']]
         values = values.pivot(index='종목코드', columns='팩터', values='값')
 
-        is_ascending = {
-            'PCR': False, 'PER': False, 
-            'PSR': False,  'PBR': False,
-            'CFOA': True, 'GMAR': True, 
-            'GPOA': True, 'EPS': True,
-            'ROE': True, 'ROA': True, 
-            '3M': True, '6M': False,
-            '9M': False, '12M': True,
-            }  
-        
-        rankin_func = lambda Series: Series.rank(ascending=is_ascending[Series.name], method='first')
-        weight_func = lambda Series: Series * self.weight_dict[Series.name]
-        minmax_func = lambda Series: (Series - min(Series)) / (max(Series) - min(Series)) + 1
-
-        factor_score = values.apply(rankin_func)
-        factor_score = factor_score.apply(minmax_func)
-        factor_score = factor_score.apply(weight_func)
+        factor_score = values[self.factors]
+        factor_score = factor_score.apply(self.rankin_func)
+        factor_score = factor_score.apply(self.minmax_func)
+        factor_score = factor_score.apply(self.weight_func)
         return factor_score
     
-    def get_RankALL(self, factors:list=[]):
+    def get_RankALL(self):
         """
         멀티팩터 또는 싱글팩터 점수를 합하여 토탈 랭킹 데이터 리턴
 
@@ -110,16 +93,16 @@ class FactorManager:
         ...
         2022-06-30 
         """
-
-        factors = [
-            'GPOA', 'CFOA', 'GMAR', 'ROE', 'ROA', 
-            'PER', 'PBR', 'PSR', 'PCR', 'EPS',
-            '3M', '6M', '9M', '12M',
-            ] if not factors else factors
-        
         dates = self.price.index
-        rank_all = [self.get_ScoreEACH(date)[factors].sum(axis=1).\
-                    rank(method='first', ascending=False) for date in dates]
+
+        self.scores_by_date = [self.get_ScoreEACH(date)[self.factors] for date in dates] \
+            if not self.scores_by_date else self.scores_by_date
+        
+        func1 = lambda df:df.apply(self.weight_func)
+        func2 = lambda df:df.sum(axis=1).rank(method='first', ascending=False)
+
+        rank_all = map(func1, self.scores_by_date)
+        rank_all = map(func2, rank_all)
         rank_all = pd.concat(rank_all, axis=1).transpose()
         rank_all.index = dates
         return rank_all
@@ -128,19 +111,16 @@ class FactorManager:
         """
         각 팩터의 가중치를 결정하는 함수
         """
-
-        weight = {
-            'PCR': 1, 'PER': 1, 
-            'PSR': 1,  'PBR': 1,
-            'CFOA': 1, 'GMAR': 1, 
-            'GPOA': 1, 'EPS': 1,
-            'ROE': 1, 'ROA': 1, 
-            '3M': 1, '6M': 1,
-            '9M': 1, '12M': 1,
-            }
-        
-        self.weight_dict = weight if value is None else \
-            dict(zip(weight.keys(), value))
+        self.weight_dict = \
+            dict(zip(self.factors, np.ones(len(self.factors)))) if value is None else \
+            dict(zip(self.factors, value))
         
 
+    def rankin_func(self, series):
+        return series.rank(method='first')
     
+    def weight_func(self, series):
+        return series*self.weight_dict[series.name]
+    
+    def minmax_func(self, series):
+        return (series-min(series)) / (max(series)-min(series)) + 1

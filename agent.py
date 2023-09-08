@@ -3,12 +3,15 @@ import random
 import torch.nn as nn 
 import numpy as np
 
+from collections import deque
 from backtester import BackTester
 from torch.optim import Adam
 from torch.optim import SGD
 from torch.nn import MSELoss
 from network import Mask
 from network import Rnet
+
+np.set_printoptions(precision=6, suppress=True)
 
 
 class RLSEARCH(BackTester):
@@ -20,8 +23,8 @@ class RLSEARCH(BackTester):
         self.rnet = Rnet(dim)
         self.mse = MSELoss()
 
-        self.opt_r = Adam(self.rnet.parameters(), lr=1e-4)
-        self.opt_a = Adam(self.mnet.parameters(), lr=1e-4)
+        self.opt_r = Adam(self.rnet.parameters(), lr=5e-3)
+        self.opt_a = Adam(self.mnet.parameters(), lr=5e-3)
     
     def save(self, path):
         torch.save(self.mnet.state_dict(), path)
@@ -37,12 +40,8 @@ class RLSEARCH(BackTester):
         """
         결과 메트릭으로부터 reward 계산
         """
-        alpha = result['alpha']
-        rankic = result['rankic']
-        sharpe = result['sharpe']
-        mdd = result['mdd']
-        reward = torch.tensor([alpha])
-        reward = torch.exp(reward)
+        reward = result['rankic']
+        reward = torch.tensor([reward])
         return reward
         
     def update(self, w, r):
@@ -62,7 +61,7 @@ class RLSEARCH(BackTester):
 
         # Policy update
         reg = self.mnet.cost(w)
-        w_loss = -(self.rnet(w) - 0.01*reg).mean()
+        w_loss = -(self.rnet(w) - 0.005*reg).mean()
 
         self.opt_a.zero_grad()
         w_loss.backward(retain_graph=True)
@@ -73,26 +72,31 @@ class RLSEARCH(BackTester):
         self.lam -= 1e-2 * lam_grad
 
         # Noise scheduling
-        self.mnet.eps -= 1/50000
+        self.mnet.eps -= 1/20000
+        self.mnet.eps = max(self.mnet.eps, 0.005)
         return r_loss.item(), w_loss.item()
         
-    def search(self, iter):
+    def search(self, iter, start, end):
         """
         RL 에이전트 학습 Loop
         """
         
         w_tensor = []
         r_tensor = []
-        batch_size = 8
+        scores = []
+        score = 0
+        batch_size = 32
 
         for i in range(iter):
             weight = self.get_w()
             self.init(weight.detach().numpy())
-            result = self.test()[-1]
+            result = self.test(start, end)[-1]
             reward = self.get_r(result)
 
+            score += 0.01 * (reward.item() - score)
             w_tensor.append(weight)
             r_tensor.append(reward)
+            scores.append(score)
 
             if len(w_tensor) >= batch_size:
                 w_batch = random.sample(w_tensor, batch_size)
@@ -104,13 +108,14 @@ class RLSEARCH(BackTester):
                 r_loss, w_loss = self.update(w_batch, r_batch)
 
                 print(f'iter:{i}')
+                print(f'score:{score}')
                 print(f'lambda:{self.lam}')
                 print(f'eps:{self.mnet.eps}')
                 print(f'r loss:{r_loss}')
                 print(f'w loss:{w_loss}')
-                print(f'mu:{self.mnet.mu}\n')
-                
+                print(f'{self.mnet.mu}\n')
 
+                
 
 class RANDOMSEARCH(BackTester):
     def __init__(self, config):
@@ -127,7 +132,7 @@ class RANDOMSEARCH(BackTester):
         w = w / np.sum(w)
         return w
     
-    def search(self, iter):
+    def search(self, iter, start='1990', end='2024'):
         """
         랜덤 써치를 통한 최적 가중치 탐색
         """
@@ -137,14 +142,14 @@ class RANDOMSEARCH(BackTester):
         for i in range(iter):
             weight = self.get_w()
             self.init(weight)
-            result = self.test()[-1]
-            alpha = result['alpha']
+            result = self.test(start, end)[-1]
+            reward = result['rankic'] 
 
             self.optimal = weight \
-                if alpha > best else self.optimal
+                if reward > best else self.optimal
             
-            best = alpha \
-                if alpha > best else best
+            best = reward \
+                if reward > best else best
             
             print(f'iter:{i}')
             print(f'best:{best}\n')

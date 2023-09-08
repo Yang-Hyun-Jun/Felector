@@ -52,13 +52,16 @@ class Mask(nn.Module):
 class Rnet(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.layer1 = nn.Linear(dim, 32)
-        self.layer2 = nn.Linear(32, 1)
+        self.layer1 = nn.Linear(dim, 64)
+        self.layer2 = nn.Linear(64, 64)
+        self.layer3 = nn.Linear(64, 1)
         self.act = nn.ReLU()
 
     def forward(self, w):
         x = self.layer1(w)
         x = self.act(x)
         x = self.layer2(x)
+        x = self.act(x)
+        x = self.layer3(x)
         return x
     
