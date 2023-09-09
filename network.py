@@ -39,6 +39,7 @@ class Mask(nn.Module):
         noise = self.sig * self.noise.normal_()
         noise = noise * self.eps
         mask = self.mu + noise*noisy
+        mask = torch.softmax(mask, 0)
         mask = torch.clamp(mask, 0.0, 1.0)
         return mask
 
@@ -52,9 +53,9 @@ class Mask(nn.Module):
 class Rnet(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.layer1 = nn.Linear(dim, 64)
-        self.layer2 = nn.Linear(64, 64)
-        self.layer3 = nn.Linear(64, 1)
+        self.layer1 = nn.Linear(dim, 256)
+        self.layer2 = nn.Linear(256, 256)
+        self.layer3 = nn.Linear(256, 1)
         self.act = nn.ReLU()
 
     def forward(self, w):
