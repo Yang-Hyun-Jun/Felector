@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     if args.algorithm == 'RL':
         RLsearch = RLSEARCH(config)
-        RLsearch.search(10000, '2010', '2015')
+        RLsearch.search(20000, '2005', '2015')
 
         optimal = RLsearch.get_w(False)
         RLsearch.init(optimal.detach().numpy())
@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     if args.algorithm == 'random':
         randomsearch = RANDOMSEARCH(config)
-        randomsearch.search(10000, '2010', '2015')
+        randomsearch.search(10000, '2005', '2015')
 
         optimal = randomsearch.optimal
         randomsearch.init(optimal)

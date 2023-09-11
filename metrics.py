@@ -13,7 +13,7 @@ class Metrics:
 
     def get_sr(self, pvs:list):
         free = (0.04) / 4
-        pvs = np.array(pvs)
+        pvs = np.array(pvs[::12])
         pct = (pvs[1:] - pvs[:-1]) / pvs[:-1]
         ratio = np.mean(pct - free) / np.std(pct)
         return ratio

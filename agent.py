@@ -11,7 +11,7 @@ from torch.nn import MSELoss
 from network import Mask
 from network import Rnet
 
-np.set_printoptions(precision=6, suppress=True)
+torch.set_printoptions(sci_mode=False)
 
 
 class RLSEARCH(BackTester):
@@ -23,8 +23,8 @@ class RLSEARCH(BackTester):
         self.rnet = Rnet(dim)
         self.mse = MSELoss()
 
-        self.opt_r = Adam(self.rnet.parameters(), lr=5e-3)
-        self.opt_a = Adam(self.mnet.parameters(), lr=5e-3)
+        self.opt_r = Adam(self.rnet.parameters(), lr=1e-4)
+        self.opt_a = Adam(self.mnet.parameters(), lr=1e-3)
     
     def save(self, path):
         torch.save(self.mnet.state_dict(), path)
@@ -41,7 +41,7 @@ class RLSEARCH(BackTester):
         결과 메트릭으로부터 reward 계산
         """
         reward = result['sharpe']
-        reward = torch.tensor([reward])
+        reward = torch.tensor([reward]) * 10
         return reward
         
     def update(self, w, r):
@@ -61,7 +61,7 @@ class RLSEARCH(BackTester):
 
         # Policy update
         reg = self.mnet.cost(w)
-        w_loss = -(self.rnet(w) - 0.00*reg).mean()
+        w_loss = -(self.rnet(w) - 0.2*reg).mean()
 
         self.opt_a.zero_grad()
         w_loss.backward(retain_graph=True)
@@ -76,7 +76,7 @@ class RLSEARCH(BackTester):
         self.mnet.eps = max(self.mnet.eps, 0.005)
         return r_loss.item(), w_loss.item()
         
-    def search(self, iter, start, end):
+    def search(self, iter, start='1990', end='2024'):
         """
         RL 에이전트 학습 Loop
         """
@@ -85,7 +85,7 @@ class RLSEARCH(BackTester):
         r_tensor = []
         scores = []
         score = 0
-        batch_size = 32
+        batch_size = 64
 
         for i in range(iter):
             weight = self.get_w()
@@ -109,11 +109,12 @@ class RLSEARCH(BackTester):
 
                 print(f'iter:{i}')
                 print(f'score:{score}')
+                print(f'reward:{reward}')
                 print(f'lambda:{self.lam}')
                 print(f'eps:{self.mnet.eps}')
                 print(f'r loss:{r_loss}')
                 print(f'w loss:{w_loss}')
-                print(f'{self.mnet.mu}\n')
+                print(f'{self.mnet.sample(False)}\n')
 
                 
 
@@ -129,6 +130,7 @@ class RANDOMSEARCH(BackTester):
         랜덤 가중치를 리턴
         """
         w = np.random.rand(self.dim)
+        w[np.argsort(w)[:6]] = 0.0 
         w = w / np.sum(w)
         return w
     
@@ -143,7 +145,7 @@ class RANDOMSEARCH(BackTester):
             weight = self.get_w()
             self.init(weight)
             result = self.test(start, end)[-1]
-            reward = result['rankic'] 
+            reward = result['sharpe'] 
 
             self.optimal = weight \
                 if reward > best else self.optimal
@@ -157,9 +159,3 @@ class RANDOMSEARCH(BackTester):
     def save(self, path):
         param = torch.tensor(self.optimal)
         torch.save(param, path)
-
-
-    
-
-        
-

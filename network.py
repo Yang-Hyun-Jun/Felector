@@ -39,6 +39,7 @@ class Mask(nn.Module):
         noise = self.sig * self.noise.normal_()
         noise = noise * self.eps
         mask = self.mu + noise*noisy
+        mask = torch.softmax(mask, dim=0)
         mask = torch.clamp(mask, 0.0, 1.0)
         return mask
 
