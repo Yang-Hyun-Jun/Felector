@@ -61,7 +61,7 @@ class RLSEARCH(BackTester):
 
         # Policy update
         reg = self.mnet.cost(w)
-        w_loss = -(self.rnet(w) - 0.2*reg).mean()
+        w_loss = -(self.rnet(w) - 0.0*reg).mean()
 
         self.opt_a.zero_grad()
         w_loss.backward(retain_graph=True)
@@ -72,8 +72,8 @@ class RLSEARCH(BackTester):
         self.lam -= 1e-2 * lam_grad
 
         # Noise scheduling
-        self.mnet.eps -= 1/20000
-        self.mnet.eps = max(self.mnet.eps, 0.005)
+        self.mnet.sigma -= 5.0/45000 
+        self.mnet.sigma = max(self.mnet.sigma, 0.005)
         return r_loss.item(), w_loss.item()
         
     def search(self, iter, start='1990', end='2024'):
@@ -81,11 +81,10 @@ class RLSEARCH(BackTester):
         RL 에이전트 학습 Loop
         """
         
-        w_tensor = []
-        r_tensor = []
-        scores = []
+        w_tensor = deque(maxlen=10000)
+        r_tensor = deque(maxlen=10000)
         score = 0
-        batch_size = 64
+        batch_size = 32
 
         for i in range(iter):
             weight = self.get_w()
@@ -96,7 +95,6 @@ class RLSEARCH(BackTester):
             score += 0.01 * (reward.item() - score)
             w_tensor.append(weight)
             r_tensor.append(reward)
-            scores.append(score)
 
             if len(w_tensor) >= batch_size:
                 w_batch = random.sample(w_tensor, batch_size)
@@ -111,10 +109,11 @@ class RLSEARCH(BackTester):
                 print(f'score:{score}')
                 print(f'reward:{reward}')
                 print(f'lambda:{self.lam}')
-                print(f'eps:{self.mnet.eps}')
+                print(f'sigma:{self.mnet.sigma}')
                 print(f'r loss:{r_loss}')
                 print(f'w loss:{w_loss}')
-                print(f'{self.mnet.sample(False)}\n')
+                print(f'{weight.detach()}')
+                print(f'{self.get_w(False).detach()}\n')
 
                 
 
@@ -130,7 +129,7 @@ class RANDOMSEARCH(BackTester):
         랜덤 가중치를 리턴
         """
         w = np.random.rand(self.dim)
-        w[np.argsort(w)[:6]] = 0.0 
+        w[np.argsort(w)[:8]] = 0.0 
         w = w / np.sum(w)
         return w
     
@@ -144,7 +143,7 @@ class RANDOMSEARCH(BackTester):
         for i in range(iter):
             weight = self.get_w()
             self.init(weight)
-            result = self.test(start, end)[-1]
+            result = self.test(start, end)[-1] 
             reward = result['sharpe'] 
 
             self.optimal = weight \

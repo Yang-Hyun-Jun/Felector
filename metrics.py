@@ -12,11 +12,11 @@ class Metrics:
         return mdd
 
     def get_sr(self, pvs:list):
-        free = (0.04) / 4
-        pvs = np.array(pvs[::12])
+        free = (0.04) / 12
+        pvs = np.array(pvs)
         pct = (pvs[1:] - pvs[:-1]) / pvs[:-1]
         ratio = np.mean(pct - free) / np.std(pct)
-        return ratio
+        return np.mean(pct)
 
     def get_rankIC(self, q=1):
         n = self.config['Number']

@@ -29,17 +29,15 @@ class Mask(nn.Module):
         super().__init__()
         self.hard = Hard.apply
         
-        self.eps = 1.0
-        self.sig = 2.0
+        self.sigma = 5.0
         self.noise = torch.randn(dim)
-        self.mu = torch.tensor([0.5] * dim)
+        self.mu = torch.tensor([5.0] * dim)
         self.mu = nn.Parameter(self.mu)
 
-    def sample(self, noisy=True): 
-        noise = self.sig * self.noise.normal_()
-        noise = noise * self.eps
+    def sample(self, noisy=True):
+        noise = self.sigma * self.noise.normal_()
         mask = self.mu + noise*noisy
-        mask = torch.softmax(mask, dim=0)
+        mask = torch.softmax(mask, dim=0) 
         mask = torch.clamp(mask, 0.0, 1.0)
         return mask
 
@@ -53,15 +51,20 @@ class Mask(nn.Module):
 class Rnet(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.layer1 = nn.Linear(dim, 64)
-        self.layer2 = nn.Linear(64, 64)
-        self.layer3 = nn.Linear(64, 1)
+        self.layer1 = nn.Linear(dim, 256)
+        self.layer2 = nn.Linear(256, 128)
+        self.layer3 = nn.Linear(128, 1)
+
+        self.BN1 = nn.BatchNorm1d(256)
+        self.BN2 = nn.BatchNorm1d(128)
         self.act = nn.ReLU()
 
     def forward(self, w):
         x = self.layer1(w)
+        x = self.BN1(x)
         x = self.act(x)
         x = self.layer2(x)
+        x = self.BN2(x)
         x = self.act(x)
         x = self.layer3(x)
         return x

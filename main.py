@@ -55,15 +55,16 @@ if __name__ == '__main__':
               'Quarter': args.quarter,
               'Factors': args.factors,
               'Dim': args.number}
-    
+
 
     if args.algorithm == 'RL':
         RLsearch = RLSEARCH(config)
-        RLsearch.search(20000, '2005', '2015')
+        RLsearch.search(50000, '2005', '2015')
 
         optimal = RLsearch.get_w(False)
-        RLsearch.init(optimal.detach().numpy())
-        PVs, PFs, TIs, POs, result = RLsearch.test('2016')
+        optimal = optimal.detach().numpy()
+        RLsearch.init(optimal)
+        PVs, PFs, TIs, POs, result = RLsearch.test('2015')
 
 
     if args.algorithm == 'random':
@@ -72,13 +73,7 @@ if __name__ == '__main__':
 
         optimal = randomsearch.optimal
         randomsearch.init(optimal)
-        PVs, PFs, TIs, POs, result = randomsearch.test('2016')
-
-
-    if args.algorithm == 'test':
-        randomsearch = RANDOMSEARCH(config)
-        randomsearch.init()
-        PVs, PFs, TIs, POs, result = randomsearch.test('2016')
+        PVs, PFs, TIs, POs, result = randomsearch.test('2015')
 
 
     seed = args.seed
@@ -87,6 +82,8 @@ if __name__ == '__main__':
     pd.DataFrame(PFs).to_csv(f'result/seed{seed}/PF_{algo}.csv')
     pd.DataFrame(TIs).to_csv(f'result/seed{seed}/TI_{algo}.csv')
     pd.DataFrame(POs).to_csv(f'result/seed{seed}/PO_{algo}.csv')
+    pd.DataFrame(optimal.reshape(1,-1))\
+        .to_csv(f'result/seed{seed}/We_{algo}.csv')
     pd.DataFrame.from_dict(result, orient='index')\
         .to_csv(f'result/seed{seed}/Me_{algo}.csv')
 
