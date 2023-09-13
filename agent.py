@@ -11,11 +11,8 @@ from torch.nn import MSELoss
 from network import Mask
 from network import Rnet
 
-<<<<<<< HEAD
 torch.set_printoptions(sci_mode=False)
 
-=======
->>>>>>> 9a6069f428728bea260c2ab2e692f32008bcbb0e
 
 class RLSEARCH(BackTester):
     def __init__(self, config):
