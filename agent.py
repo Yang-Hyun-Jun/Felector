@@ -11,8 +11,11 @@ from torch.nn import MSELoss
 from network import Mask
 from network import Rnet
 
+<<<<<<< HEAD
 torch.set_printoptions(sci_mode=False)
 
+=======
+>>>>>>> 9a6069f428728bea260c2ab2e692f32008bcbb0e
 
 class RLSEARCH(BackTester):
     def __init__(self, config):
@@ -84,7 +87,7 @@ class RLSEARCH(BackTester):
         w_tensor = deque(maxlen=10000)
         r_tensor = deque(maxlen=10000)
         score = 0
-        batch_size = 32
+        batch_size = 128
 
         for i in range(iter):
             weight = self.get_w()
@@ -106,6 +109,7 @@ class RLSEARCH(BackTester):
                 r_loss, w_loss = self.update(w_batch, r_batch)
 
                 print(f'iter:{i}')
+                print(f'reward:{reward.item()}')
                 print(f'score:{score}')
                 print(f'reward:{reward}')
                 print(f'lambda:{self.lam}')
