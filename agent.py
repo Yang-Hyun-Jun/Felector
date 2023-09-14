@@ -25,7 +25,7 @@ class RLSEARCH(BackTester):
         self.mse = MSELoss()
 
         self.opt_r = Adam(self.rnet.parameters(), lr=1e-4)
-        self.opt_a = Adam(self.mnet.parameters(), lr=1e-3)
+        self.opt_a = Adam(self.mnet.parameters(), lr=2e-3)
     
     def save(self, path):
         torch.save(self.mnet.state_dict(), path)
