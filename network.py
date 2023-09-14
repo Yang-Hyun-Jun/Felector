@@ -4,7 +4,7 @@ import torch.nn as nn
 import pandas as pd
 import numpy as np
 
-device = 'cpu'
+device = 'cuda'
 
 class Hard(torch.autograd.Function):
     """
@@ -30,7 +30,7 @@ class Mask(nn.Module):
         self.hard = Hard.apply
         
         self.sigma = 5.0
-        self.noise = torch.randn(dim)
+        self.noise = torch.randn(dim).to(device)
         self.mu = torch.tensor([5.0] * dim)
         self.mu = nn.Parameter(self.mu)
 

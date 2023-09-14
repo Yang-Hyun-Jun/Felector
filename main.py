@@ -38,7 +38,7 @@ all = ['1M', '3M', '6M', '9M', '12M',
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", type=int, default=1)
-parser.add_argument("--number", type=int, default=10)
+parser.add_argument("--number", type=int, default=30)
 parser.add_argument("--balance", type=int, default=1000)
 parser.add_argument("--algorithm", type=str, default='RL')
 parser.add_argument("--quintile", type=int, default=1)
@@ -54,12 +54,12 @@ if __name__ == '__main__':
               'Balance': args.balance,
               'Quarter': args.quarter,
               'Factors': args.factors,
-              'Dim': args.number}
+              'Dim': len(args.factors)}
 
 
     if args.algorithm == 'RL':
         RLsearch = RLSEARCH(config)
-        RLsearch.search(50000, '2005', '2015')
+        RLsearch.search(20000, '2005', '2015')
 
         optimal = RLsearch.get_w(False)
         optimal = optimal.detach().numpy()
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     if args.algorithm == 'random':
         randomsearch = RANDOMSEARCH(config)
-        randomsearch.search(10000, '2005', '2015')
+        randomsearch.search(3000, '2005', '2015')
 
         optimal = randomsearch.optimal
         randomsearch.init(optimal)

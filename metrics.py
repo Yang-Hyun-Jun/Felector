@@ -16,7 +16,7 @@ class Metrics:
         pvs = np.array(pvs)
         pct = (pvs[1:] - pvs[:-1]) / pvs[:-1]
         ratio = np.mean(pct - free) / np.std(pct)
-        return np.mean(pct)
+        return (pvs[-1] - pvs[0]) / (10 * pvs[0])
 
     def get_rankIC(self, q=1):
         n = self.config['Number']

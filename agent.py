@@ -13,14 +13,15 @@ from network import Rnet
 
 torch.set_printoptions(sci_mode=False)
 
+device = 'cuda'
 
 class RLSEARCH(BackTester):
     def __init__(self, config):
         BackTester.__init__(self, config)
 
         dim = config['Dim']
-        self.mnet = Mask(dim)
-        self.rnet = Rnet(dim)
+        self.mnet = Mask(dim).to(device)
+        self.rnet = Rnet(dim).to(device)
         self.mse = MSELoss()
 
         self.opt_r = Adam(self.rnet.parameters(), lr=1e-4)
@@ -34,14 +35,14 @@ class RLSEARCH(BackTester):
         """
         Policy로부터 팩터 가중치 샘플링
         """
-        return self.mnet.sample(noise)
+        return self.mnet.sample(noise).cpu()
 
     def get_r(self, result:dict):
         """
         결과 메트릭으로부터 reward 계산
         """
         reward = result['sharpe']
-        reward = torch.tensor([reward]) * 10
+        reward = torch.tensor([reward])
         return reward
         
     def update(self, w, r):
@@ -72,7 +73,7 @@ class RLSEARCH(BackTester):
         self.lam -= 1e-2 * lam_grad
 
         # Noise scheduling
-        self.mnet.sigma -= 5.0/45000 
+        self.mnet.sigma -= 5.0/20000 
         self.mnet.sigma = max(self.mnet.sigma, 0.005)
         return r_loss.item(), w_loss.item()
         
@@ -84,7 +85,7 @@ class RLSEARCH(BackTester):
         w_tensor = deque(maxlen=10000)
         r_tensor = deque(maxlen=10000)
         score = 0
-        batch_size = 128
+        batch_size = 32
 
         for i in range(iter):
             weight = self.get_w()
@@ -100,8 +101,8 @@ class RLSEARCH(BackTester):
                 w_batch = random.sample(w_tensor, batch_size)
                 r_batch = random.sample(r_tensor, batch_size)
 
-                w_batch = torch.stack(w_batch).float()
-                r_batch = torch.stack(r_batch).float()
+                w_batch = torch.stack(w_batch).float().to(device)
+                r_batch = torch.stack(r_batch).float().to(device)
                 
                 r_loss, w_loss = self.update(w_batch, r_batch)
 
