@@ -29,7 +29,7 @@ class Mask(nn.Module):
         super().__init__()
         self.hard = Hard.apply
         
-        self.sigma = 5.0
+        self.sigma = 3.0
         self.noise = torch.randn(dim).to(device)
         self.mu = torch.tensor([5.0] * dim)
         self.mu = nn.Parameter(self.mu)

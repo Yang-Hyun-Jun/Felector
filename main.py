@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     if args.algorithm == 'RL':
         RLsearch = RLSEARCH(config)
-        RLsearch.search(20000, '2005', '2015')
+        RLsearch.search(30000, '2005', '2015')
 
         optimal = RLsearch.get_w(False)
         optimal = optimal.detach().numpy()
