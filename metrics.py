@@ -16,7 +16,7 @@ class Metrics:
         pvs = np.array(pvs)
         pct = (pvs[1:] - pvs[:-1]) / pvs[:-1]
         ratio = np.mean(pct - free) / np.std(pct)
-        return (pvs[-1] - pvs[0]) / (10 * pvs[0])
+        return ratio
 
     def get_rankIC(self, q=1):
         n = self.config['Number']
@@ -34,3 +34,13 @@ class Metrics:
         RankIC = np.mean(coeffs)
         RankIC = max(0, RankIC)
         return RankIC
+    
+    def get_alpha(self, pv, start, end):
+        free = 0.04 / 12
+        kospi = self.kospi[start:end]
+        pv = np.array(pv).reshape(-1)
+        R_i = (pv[1:] / pv[:-1]) - 1
+        R_f = (kospi[1:] / kospi[:-1]) - 1
+        R_f = R_f.reshape(-1)
+        alpha = np.polyfit(R_f-free, R_i-free, 1)[-1]
+        return alpha.reshape(1,-1)

@@ -24,8 +24,8 @@ class RLSEARCH(BackTester):
         self.rnet = Rnet(dim).to(device)
         self.mse = MSELoss()
 
-        self.opt_r = SGD(self.rnet.parameters(), lr=1e-4, momentum=0.9)
-        self.opt_a = SGD(self.mnet.parameters(), lr=2e-3, momentum=0.9)
+        self.opt_r = Adam(self.rnet.parameters(), lr=1e-4)
+        self.opt_a = Adam(self.mnet.parameters(), lr=2e-3)
     
     def save(self, path):
         torch.save(self.mnet.state_dict(), path)
@@ -127,7 +127,7 @@ class RANDOMSEARCH(BackTester):
         랜덤 가중치를 리턴
         """
         w = np.random.rand(self.dim)
-        # w[np.argsort(w)[:8]] = 0.0 
+        w[np.argsort(w)[:8]] = 0.0 
         w = w / np.sum(w)
         return w
     

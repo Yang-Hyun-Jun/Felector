@@ -1,27 +1,3 @@
-"""
-[Back testing list]
-
-1. 싱글 팩터 
-    - Quintile 포트폴리오 테스트
-    - 리밸런싱 주기 테스트 (3개월, 6개월, 1년)
-    - 가중방식 (Equal, Market cap) 테스트
-
-2. 멀티 팩터
-    - Quintile 포트폴리오 테스트
-    - 리밸런싱 주기 테스트 (3개월, 6개월, 1년)
-    - 가중방식 (Equal, Market cap) 테스트
-
-3. 멀티 팩터 (팩터 랜덤써치 조합)
-    - Quintile 포트폴리오 테스트
-    - 리밸런싱 주기 테스트 (3개월, 6개월, 1년)
-    - 가중방식 (Equal, Market cap) 테스트
-
-4. 멀티 팩터 (팩터 RL 써치 조합)
-    - Quintile 포트폴리오 테스트
-    - 리밸런싱 주기 테스트 (3개월, 6개월, 1년)
-    - 가중방식 (Equal, Market cap) 테스트
-"""
-
 import os
 import argparse
 import numpy as np 
@@ -59,7 +35,7 @@ if __name__ == '__main__':
 
     if args.algorithm == 'RL':
         RLsearch = RLSEARCH(config)
-        RLsearch.search(30000, '2005', '2015')
+        RLsearch.search(30000, '2009', '2015')
 
         optimal = RLsearch.get_w(False)
         optimal = optimal.detach().numpy()
@@ -69,7 +45,7 @@ if __name__ == '__main__':
 
     if args.algorithm == 'random':
         randomsearch = RANDOMSEARCH(config)
-        randomsearch.search(3000, '2005', '2015')
+        randomsearch.search(30000, '2009', '2015')
 
         optimal = randomsearch.optimal
         randomsearch.init(optimal)
