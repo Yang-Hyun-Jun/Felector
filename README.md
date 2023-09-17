@@ -9,9 +9,6 @@
 |:--:|:--:|:--:|
 |19%  | 58% | 23%  |
 
-| Alpha | Sharpe ratio | MDD |
-|:--:|:--:|:--:|
-|0.0181  | 0.4586 | 30.7987  |
 
 # Overview
 
@@ -22,6 +19,7 @@
 
     # Run Felector algorithm
     python main.py --algorithm RL 
+    
     # Run random search
     python main.py --algorithm random
 
