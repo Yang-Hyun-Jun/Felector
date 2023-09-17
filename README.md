@@ -9,6 +9,9 @@
 ![](result/plot.png)
 ![](result/bar.png)
 
+    python main.py --algorithm RL # Run Felector algorithm
+    python main.py --algorithm random # Run random search
+
 ***탐색 팩터 공간***
 - 1개월, 3개월 6개월, 9개월, 12개월 주가 수익률 모멘텀 
 - 12개월 모멘텀 - 1개월 모멘텀, 
