@@ -11,8 +11,10 @@
 
 ***코드 실행***
 
-    python main.py --algorithm RL # Run Felector algorithm
-    python main.py --algorithm random # Run random search
+    # Run Felector algorithm
+    python main.py --algorithm RL 
+    # Run random search
+    python main.py --algorithm random
 
 ***모듈 설명***
 - FactorManager: 팩터 값 데이터에서 스코어 및 랭킹 데이터 추출
