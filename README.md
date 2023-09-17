@@ -1,5 +1,5 @@
 # Felector: Factor Selection Algorihtm
-- **팩터 부분집합 선택  문제**를 풀기 위한 RL 알고리즘. ***Felector*** 구현
+- ***Felector***: 팩터 부분집합 선택 문제를 풀기 위한 RL 알고리즘. 
 - 각 팩터 점수에 줄 수 있는 가중치를 최적화하도록 강화학습
 - 결과적으로 다음 전략이 가장 높은 CAPM alpha, Sharpe ratio, MDD를 가짐 <br>
 
