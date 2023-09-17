@@ -9,8 +9,15 @@
 ![](result/plot.png)
 ![](result/bar.png)
 
+***코드 실행***
+
     python main.py --algorithm RL # Run Felector algorithm
     python main.py --algorithm random # Run random search
+
+***모듈 설명***
+- FactorManager: 팩터 값 데이터에서 스코어 및 랭킹 데이터 추출
+- BackTester: 팩터 랭킹 데이터로부터 포트폴리오 구성 후 백테스팅 진행
+- Agent: 탐색 알고리즘 (Felector, Random)의 탐색 및 파라미터 업데이트 
 
 ***탐색 팩터 공간***
 - 1개월, 3개월 6개월, 9개월, 12개월 주가 수익률 모멘텀 
