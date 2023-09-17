@@ -23,7 +23,7 @@
     # Run random search
     python main.py --algorithm random
 
-'''python
+```python
 """
 Factor Manager 사용법
 """
@@ -55,7 +55,7 @@ end = '2015'
 
 RLsearch = RLSEARCH(config)
 results = RLsearch.test(start, end)
-'''
+```
 
 ***모듈 설명***
 - FactorManager: 팩터 값 데이터에서 스코어 및 랭킹 데이터 추출
