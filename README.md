@@ -6,6 +6,7 @@
 
 # Overview
 
+![](result/plot.png)
 ![](result/bar.png)
 
 ***탐색 팩터 공간***
