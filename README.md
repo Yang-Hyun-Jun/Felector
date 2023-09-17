@@ -4,11 +4,11 @@
 - 결과적으로 다음 전략이 가장 높은 CAPM alpha, Sharpe ratio, MDD를 가짐 <br>
 *12M*: **19%**, *12M-3M*: **58%**, *K-RATI*O: **23%**
 
-<center>
+# Best Strategy
+
 | 12M | 12M-3M  | K-RATIO |
 |:--:|:--:|:--:|
 |19%  | 58% | 23%  |
-</center>
 
 # Overview
 
