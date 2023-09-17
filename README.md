@@ -23,6 +23,40 @@
     # Run random search
     python main.py --algorithm random
 
+'''python
+"""
+Factor Manager 사용법
+"""
+factors = ['1M', '12M', '12_6M', 'Kratio']
+FM = FactorManager(factors)
+
+# Factor Manager에서 전 기간 종목별 팩터 점수 가져오기
+FM.get_FactorData('Kratio')
+
+# Factor Manager에서 특정 기간 전 종목 팩터별 점수 가져오기
+FM.get_ScoreEACH('2022-03-31')
+
+# Factor Manager에서 전 기간 전 종목 팩터 랭킹 가져오기
+FM.get_RankALL()
+
+"""
+Back Tester 사용법
+"""
+# config 설정
+config = {
+    'Number': 10, 'Quantile':1, 
+    'Balance':1000, 'Quarter':1Q, 
+    'Factors':factors, 'Dim': 10
+    }
+
+# 백테스팅하고 결과 받기
+start = '2009'
+end = '2015'
+
+RLsearch = RLSEARCH(config)
+results = RLsearch.test(start, end)
+'''
+
 ***모듈 설명***
 - FactorManager: 팩터 값 데이터에서 스코어 및 랭킹 데이터 추출
 - BackTester: 팩터 랭킹 데이터로부터 포트폴리오 구성 후 백테스팅 진행
